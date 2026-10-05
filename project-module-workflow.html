@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Module Workflow - AI Code Review &amp; Governance Platform</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #f1f5f9;
+      color: #0f172a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header.toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .brand h1 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .brand p {
+      font-size: 12px;
+      color: #64748b;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    button.btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    button.btn:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+      color: #0f172a;
+    }
+    button.btn-primary {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #ffffff;
+    }
+    button.btn-primary:hover {
+      background: #1d4ed8;
+      border-color: #1d4ed8;
+      color: #ffffff;
+    }
+    .container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      padding: 32px 16px 64px 16px;
+    }
+    .paper {
+      background: #ffffff;
+      box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      max-width: 1100px;
+      width: 100%;
+      padding: 24px;
+      overflow: hidden;
+    }
+    #svg-host {
+      width: 100%;
+      height: auto;
+    }
+    #svg-host svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .instructions-card {
+      max-width: 1100px;
+      margin: 0 auto 32px auto;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-size: 13px;
+      color: #475569;
+      line-height: 1.6;
+    }
+    .instructions-card strong {
+      color: #0f172a;
+    }
+    @media print {
+      header.toolbar, .instructions-card {
+        display: none !important;
+      }
+      body, .container {
+        background: #ffffff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .paper {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="toolbar">
+    <div class="brand">
+      <h1>AI Code Review &amp; Governance Platform</h1>
+      <p>Project Module Workflow &bull; 18-Step Enterprise Architecture Diagram</p>
+    </div>
+    <div class="actions">
+      <button class="btn" onclick="window.print()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+        Print / PDF
+      </button>
+      <button class="btn" onclick="downloadSvg()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Download SVG
+      </button>
+      <button class="btn btn-primary" onclick="exportHighResPng()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+        Export 300 DPI PNG
+      </button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div style="width: 100%; max-width: 1100px;">
+      <div class="instructions-card">
+        <strong>Report &amp; Presentation Tip:</strong> Click <strong>Export 300 DPI PNG</strong> to generate a high-definition image to insert directly into Microsoft Word, LaTeX, Google Docs, or PowerPoint. For vector quality in Word or Illustrator, use <strong>Download SVG</strong>.
+      </div>
+      <div class="paper">
+        <div id="svg-host">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 2200" width="100%" height="100%" style="background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <!-- Arrow Marker -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563EB"/>
+    </marker>
+    <marker id="arrow-indigo" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#4F46E5"/>
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#7C3AED"/>
+    </marker>
+    <marker id="arrow-teal" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#0D9488"/>
+    </marker>
+
+    <!-- Drop Shadows for enterprise depth -->
+    <filter id="card-shadow" x="-5%" y="-10%" width="110%" height="130%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0F172A" flood-opacity="0.06"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#0F172A" flood-opacity="0.04"/>
+    </filter>
+    <filter id="phase-shadow" x="-2%" y="-2%" width="104%" height="106%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="#0F172A" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- ==================== HEADER SECTION ==================== -->
+  <g id="header" transform="translate(0, 0)">
+    <!-- Top Decorative Line -->
+    <rect x="60" y="30" width="960" height="4" rx="2" fill="url(#brand-gradient)" />
+    <linearGradient id="brand-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2563EB"/>
+      <stop offset="35%" stop-color="#4F46E5"/>
+      <stop offset="70%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#0D9488"/>
+    </linearGradient>
+
+    <!-- Main Title & System Badge -->
+    <rect x="60" y="46" width="220" height="24" rx="12" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+    <text x="170" y="62" font-size="11" font-weight="700" fill="#1D4ED8" text-anchor="middle" letter-spacing="0.8">SYSTEM ARCHITECTURE SPECIFICATION</text>
+
+    <text x="60" y="105" font-size="28" font-weight="800" fill="#0F172A" letter-spacing="-0.5">AI Code Review &amp; Governance Platform</text>
+    <text x="60" y="132" font-size="15" font-weight="500" fill="#475569">Project Module Workflow &amp; End-to-End Execution Sequence</text>
+
+    <!-- Metadata pill -->
+    <g transform="translate(810, 85)">
+      <rect x="0" y="0" width="210" height="38" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+      <circle cx="20" cy="19" r="5" fill="#10B981"/>
+      <text x="34" y="18" font-size="11" font-weight="700" fill="#1E293B">Status: Production Spec</text>
+      <text x="34" y="30" font-size="10" font-weight="500" fill="#64748B">Flow Sequence: 18 Steps</text>
+    </g>
+  </g>
+
+  <!-- ==================== ACTORS LEGEND ==================== -->
+  <g id="actors-legend" transform="translate(60, 160)">
+    <rect x="0" y="0" width="960" height="66" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.2"/>
+    <text x="24" y="24" font-size="11" font-weight="700" fill="#64748B" letter-spacing="0.5">PARTICIPATING ACTORS &amp; MODULES</text>
+
+    <!-- Actor 1: User -->
+    <g transform="translate(24, 34)">
+      <rect x="0" y="0" width="125" height="24" rx="6" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+      <!-- User Icon -->
+      <path d="M12 7 a2.5 2.5 0 1 0 0.001 0 M8 17 a4 4 0 0 1 8 0" fill="none" stroke="#2563EB" stroke-width="1.4" stroke-linecap="round"/>
+      <text x="26" y="16" font-size="11" font-weight="600" fill="#1E40AF">User</text>
+    </g>
+
+    <!-- Actor 2: Backend -->
+    <g transform="translate(160, 34)">
+      <rect x="0" y="0" width="135" height="24" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1"/>
+      <!-- Server Icon -->
+      <path d="M8 8 h10 v4 h-10 z M8 14 h10 v4 h-10 z M10 10 h.01 M10 16 h.01" fill="none" stroke="#4F46E5" stroke-width="1.3" stroke-linecap="round"/>
+      <text x="26" y="16" font-size="11" font-weight="600" fill="#3730A3">Backend</text>
+    </g>
+
+    <!-- Actor 3: Email Service -->
+    <g transform="translate(306, 34)">
+      <rect x="0" y="0" width="150" height="24" rx="6" fill="#FFFBEB" stroke="#FDE68A" stroke-width="1"/>
+      <!-- Email Icon -->
+      <path d="M8 8 h12 v9 h-12 z M8 9 l6 4.5 l6 -4.5" fill="none" stroke="#D97706" stroke-width="1.3" stroke-linecap="round"/>
+      <text x="28" y="16" font-size="11" font-weight="600" fill="#92400E">Email Service</text>
+    </g>
+
+    <!-- Actor 4: GitHub -->
+    <g transform="translate(467, 34)">
+      <rect x="0" y="0" width="135" height="24" rx="6" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1"/>
+      <!-- GitHub Icon -->
+      <path d="M14 6 C10.7 6 8 8.7 8 12 c0 2.6 1.7 4.9 4.1 5.7 .3 .05 .4 -.13 .4 -.29 v-1.03 c-1.67 .36 -2.02 -.8 -2.02 -.8 -.27 -.69 -.66 -.88 -.66 -.88 -.54 -.37 .04 -.36 .04 -.36 .6 .04 .92 .62 .92 .62 .53 .91 1.4 .65 1.74 .5 .05 -.39 .21 -.65 .38 -.8 -1.33 -.15 -2.73 -.67 -2.73 -2.97 0 -.66 .23 -1.19 .62 -1.61 -.06 -.15 -.27 -.76 .06 -1.59 0 0 .5 -.16 1.66 .62 .48 -.13 .99 -.2 1.5 -.2 .51 0 1.02 .07 1.5 .2 1.16 -.78 1.66 -.62 1.66 -.62 .33 .83 .12 1.44 .06 1.59 .39 .42 .62 .95 .62 1.61 0 2.31 -1.4 2.82 -2.74 2.96 .22 .19 .41 .56 .41 1.12 v1.66 c0 .16 .11 .35 .42 .29 C18.3 16.9 20 14.6 20 12 20 8.7 17.3 6 14 6 z" fill="#24292F"/>
+      <text x="28" y="16" font-size="11" font-weight="600" fill="#1E293B">GitHub</text>
+    </g>
+
+    <!-- Actor 5: AI Review Worker -->
+    <g transform="translate(613, 34)">
+      <rect x="0" y="0" width="165" height="24" rx="6" fill="#FAF5FF" stroke="#E9D5FF" stroke-width="1"/>
+      <!-- Sparkle/AI Icon -->
+      <path d="M14 6 l1 3 l3 1 l-3 1 l-1 3 l-1 -3 l-3 -1 l3 -1 z M9 14 l.5 1.5 l1.5 .5 l-1.5 .5 l-.5 1.5 l-.5 -1.5 l-1.5 -.5 l1.5 -.5 z" fill="#7C3AED"/>
+      <text x="28" y="16" font-size="11" font-weight="600" fill="#6B21A8">AI Review Worker</text>
+    </g>
+
+    <!-- Actor 6: Frontend Dashboard -->
+    <g transform="translate(789, 34)">
+      <rect x="0" y="0" width="155" height="24" rx="6" fill="#F0FDFA" stroke="#99F6E4" stroke-width="1"/>
+      <!-- Dashboard Icon -->
+      <path d="M8 8 h5 v5 h-5 z M15 8 h5 v3 h-5 z M15 13 h5 v5 h-5 z M8 15 h5 v3 h-5 z" fill="none" stroke="#0D9488" stroke-width="1.3" stroke-linecap="round"/>
+      <text x="28" y="16" font-size="11" font-weight="600" fill="#115E59">Frontend Dashboard</text>
+    </g>
+  </g>
+
+  <!-- ==================== FLOW CHART BODY ==================== -->
+
+  <!-- ==================== PHASE 1: USER REGISTRATION & EMAIL VERIFICATION ==================== -->
+  <g id="phase-1" transform="translate(60, 245)">
+    <!-- Phase 1 Boundary Container -->
+    <rect x="0" y="0" width="960" height="570" rx="14" fill="#FAFCFF" stroke="#DBEAFE" stroke-width="1.2" stroke-dasharray="6,4" filter="url(#phase-shadow)"/>
+    
+    <!-- Phase Badge -->
+    <g transform="translate(24, 18)">
+      <rect x="0" y="0" width="370" height="28" rx="6" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+      <circle cx="16" cy="14" r="4" fill="#2563EB"/>
+      <text x="28" y="18" font-size="12" font-weight="700" fill="#1D4ED8" letter-spacing="0.5">PHASE 1: REGISTRATION &amp; EMAIL VERIFICATION</text>
+    </g>
+
+    <!-- Connecting Arrows for Phase 1 -->
+    <!-- 1 -> 2 -->
+    <line x1="480" y1="108" x2="480" y2="136" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- 2 -> 3 -->
+    <line x1="480" y1="198" x2="480" y2="226" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- 3 -> 4 -->
+    <line x1="480" y1="288" x2="480" y2="316" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- 4 -> 5 -->
+    <line x1="480" y1="378" x2="480" y2="406" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- 5 -> 6 -->
+    <line x1="480" y1="468" x2="480" y2="496" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- STEP 01 -->
+    <g id="step-1" transform="translate(180, 50)">
+      <rect x="0" y="0" width="600" height="58" rx="10" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" filter="url(#card-shadow)"/>
+      <rect x="0" y="0" width="6" height="58" rx="3" fill="#2563EB"/>
+      
+      <!-- Step Number Badge -->
+      <rect x="20" y="16" width="32" height="26" rx="6" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+      <text x="36" y="33" font-size="12" font-weight="800" fill="#1D4ED8" text-anchor="middle">01</text>
+      
+      <!-- Text -->
+      <text x="68" y="34" font-size="14" font-weight="700" fill="#0F172A">User Registers</text>
+      
+      <!-- Actor Badge -->
+      <g transform="translate(470, 16)">
+        <rect x="0" y="0" width="110" height="26" rx="6" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+        <path d="M12 9 a2 2 0 1 0 0.001 0 M8 17 a3.5 3.5 0 0 1 7 0" fill="none" stroke="#2563EB" stroke-width="1.3" stroke-linecap="round"/>
+        <text x="24" y="17" font-size="11" font-weight="600" fill="#1E40AF">User</text>
+      </g>
+    </g>
+
+    <!-- STEP 02 -->
+    <g id="step-2" transform="translate(180, 140)">
+      <rect x="0" y="0" width="600" height="58" rx="10" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" filter="url(#card-shadow)"/>
+      <rect x="0" y="0" width="6" height="58" rx="3" fill="#4F46E5"/>
+      
+      <rect x="20" y="16" width="32" height="26" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1"/>
+      <text x="36" y="33" font-size="12" font-weight="800" fill="#4338CA" text-anchor="middle">02</text>
+      
+      <text x="68" y="34" font-size="14" font-weight="700" fill="#0F172A">Backend creates user with <tspan font-family="monospace" font-weight="600" fill="#4338CA">isVerified = false</tspan></text>
+      
+      <!-- Actor Badge -->
+      <g transform="translate(470, 16)">
+        <rect x="0" y="0" width="110" height="26" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1"/>
+        <path d="M8 9 h8 v3 h-8 z M8 14 h8 v3 h-8 z" fill="none" stroke="#4F46E5" stroke-width="1.2" stroke-linecap="round"/>
+        <text x="24" y="17" font-size="11" font-weight="600" fill="#3730A3">Backend</text>
+      </g>
+    </g>
+
+    <!-- STEP 03 -->
+    <g id="step-3" transform="translate(180, 230)">
+      <rect x="0" y="0" width="600" height="58" rx="10" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" filter="url(#card-shadow)"/>
+      <rect x="0" y="0" width="6" height="58" rx="3" fill="#D97706"/>
+      
+      <rect x="20" y="16" width="32" height="26" rx="6" fill="#FFFBEB" stroke="#FDE68A" stroke-width="1"/>
+      <text x="36" y="33" font-size="12" font-weight="800" fill="#B45309" text-anchor="middle">03</text>
+      
+      <text x="68" y="34" font-size="14" font-weight="700" fill="#0F172A">Backend sends OTP to email</text>
+      
+      <!-- Dual Actor Badge (Backend & Email Service) -->
+      <g transform="translate(435, 16)">
+        <rect x="0" y="0" width="145" height="26" rx="6" fill="#FFFBEB" stroke="#FDE68A" stroke-width="1"/>
+        <!-- Small Email Icon -->
+        <path d="M8 9 h10 v8 h-10 z M8 10 l5 3.5 l5 -3.5" fill="none" stroke="#D97706" stroke-width="1.2" stroke-linecap="round"/>
+        <text x="26" y="17" font-size="11" font-weight="600" fill="#92400E">Email Service</text>
+      </g>
+    </g>
+
+    <!-- STEP 04 -->
+    <g id="step-4" transform="translate(180, 320)">
+      <rect x="0" y="0" width="600" height="58" rx="10" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" filter="url(#card-shadow)"/>
+      <rect x="0" y="0" width="6" height="58" rx="3" fill="#2563EB"/>
+      
+      <rect x="20" y="16" width="32" height="26" rx="6" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+      <text x="36" y="33" font-size="12" font-weight="800" fill="#1D4ED8" text-anchor="middle">04</text>
+      
+      <text x="68" y="34" font-size="14" font-weight="700" fill="#0F172A">User submits OTP</text>
+      
+      <g transform="translate(470, 16)">
+        <rect x="0" y="0" width="110" height="26" rx="6" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+        <path d="M12 9 a2 2 0 1 0 0.001 0 M8 17 a3.5 3.5 0 0 1 7 0" fill="none" stroke="#2563EB" stroke-width="1.3" stroke-linecap="round"/>
+        <text x="24" y="17" font-size="11" font-weight="600" fill="#1E40AF">User</text>
+      </g>
+    </g>
+
+    <!-- STEP 05 -->
+    <g id="step-5" transform="translate(180, 410)">
+      <rect x="0" y="0" width="600" height="58" rx="10" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" filter="url(#card-shadow)"/>
+      <rect x="0" y="0" width="6" height="58" rx="3" fill="#4F46E5"/>
+      
+      <rect x="20" y="16" width="32" height="26" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1"/>
+      <text x="36" y="33" font-size="12" font-weight="800" fill="#4338CA" text-anchor="middle">05</text>
+      
+      <text x="68" y="34" font-size="14" font-weight="700" fill="#0F172A">Backend verifies OTP</text>
+      
+      <g transform="translate(470, 16)">
+        <rect x="0" y="0" width="110" height="26" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1"/>
+        <path d="M8 9 h8 v3 h-8 z M8 14 h8 v3 h-8 z" fill="none" stroke="#4F46E5" stroke-width="1.2" stroke-linecap="round"/>
+        <text x="24" y="17" font-size="11" font-weight="600" fill="#3730A3">Backend</text>
+      </g>
+    </g>
+
+    <!-- STEP 06 -->
+    <g id="step-6" transform="translate(180, 500)">
+      <rect x="0" y="0" width="600" height="58" rx="10" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" filter="url(#card-shadow)"/>
+      <rect x="0" y="0" width="6" height="58" rx="3" fill="#10B981"/>
+      
+      <rect x="20" y="16" width="32" height="26" rx="6" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+      <text x="36" y="33" font-size="12" font-weight="800" fill="#047857" text-anchor="middle">06</text>
+      
+      <text x="68" y="34" font-size="14" font-weight="700" fill="#0F172A">Backend marks email as verified</text>
+      
+      <g transform="translate(470, 16)">
+        <rect x="0" y="0" width="110" height="26" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1"/>
+        <path d="M8 9 h8 v3 h-8 z M8 14 h8 v3 h-8 z" fill="none" stroke="#4F46E5" stroke-width="1.2" stroke-linecap="round"/>
+        <text x="24" y="17" font-size="11" font-weight="600" fill="#3730A3">Backend</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Transition Arrow Phase 1 -> Phase 2 -->
+  <line x1="540" y1="815" x2="540" y2="850" stroke="#4F46E5" stroke-width="2.5" marker-end="url(#arrow-indigo)"/>
+
+  <!-- ==================== PHASE 2: GITHUB APP INTEGRATION & REPO MAPPING ==================== -->
+  <g id="phase-2" transform="translate(60, 855)">
+    <!-- Phase 2 Boundary Container -->
+    <rect x="0" y="0" width="960" height="660" rx="14" fill="#FBFBFE" stroke="#E0E7FF" stroke-width="1.2" stroke-dasharray="6,4" filter="url(#phase-shadow)"/>
+    
+    <!-- Phase Badge -->
+    <g transform="translate(24, 18)">
+      <rect x="0" y="0" width="400" height="28" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1"/>
+      <circle cx="16" cy="14" r="4" fill="#4F46E5"/>
+      <text x="28" y="18" font-size="12" font-weight="700" fill="#3730A3" letter-spacing="0.5">PHASE 2: GITHUB APP INTEGRATION &amp; REPO MAPPING</text>
+    </g>
+
+    <!-- Connecting Arrows for Phase 2 -->
+    <!-- 7 -> 8 -->
+    <line x1="480" y1="108" x2="480" y2="136" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- 8 -> 9 -->
+    <line x1="480" y1="198" x2="480" y2="226" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- 9 -> 10 -->
+    <line x1="480" y1="288" x2="480" y2="316" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- 10 -> 11 -->
+    <line x1="480" y1="378" x2="480" y2="406" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- 11 -> 12 -->
+    <line x1="480" y1="468" x2="480" y2="496" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- 12 -> 13 -->
+    <line x1="480" y1="558" x2="480" y2="586" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- STEP 07 -->
+    <g id="step-7" transform="translate(180, 50)">
+      <rect x="0" y="0" width="600" height="58" rx="10" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" filter="url(#card-shadow)"/>
+      <rect x="0" y="0" width="6" height="58" rx="3" fill="#2563EB"/>
+      
+      <rect x="20" y="16" width="32" height="26" rx="6" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+      <text x="36" y="33" font-size="12" font-weight="800" fill="#1D4ED8" text-anchor="middle">07</text>
+      
+      <text x="68" y="34" font-size="14" font-weight="700" fill="#0F172A">User clicks Connect GitHub</text>
+      
+      <g transform="translate(470, 16)">
+        <rect x="0" y="0" width="110" height="26" rx="6" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+        <path d="M12 9 a2 2 0 1 0 0.001 0 M8 17 a3.5 3.5 0 0 1 7 0" fill="none" stroke="#2563EB" stroke-width="1.3" stroke-linecap="round"/>
+        <text x="24" y="17" font-size="11" font-weight="600" fill="#1E40AF">User</text>
+      </g>
+    </g>
+
+    <!-- STEP 08 -->
+    <g id="step-8" transform="translate(180, 140)">
+      <rect x="0" y="0" width="600" height="58" rx="10" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" filter="url(#card-shadow)"/>
+      <rect x="0" y="0" width="6" height="58" rx="3" fill="#4F46E5"/>
+      
+      <rect x="20" y="16" width="32" height="26" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1"/>
+      <text x="36" y="33" font-size="12" font-weight="800" fill="#4338CA" text-anchor="middle">08</text>
+      
+      <text x="68" y="34" font-size="14" font-weight="700" fill="#0F172A">Backend generates GitHub App install URL</text>
+      
+      <g transform="translate(470, 16)">
+        <rect x="0" y="0" width="110" height="26" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1"/>
+        <path d="M8 9 h8 v3 h-8 z M8 14 h8 v3 h-8 z" fill="none" stroke="#4F46E5" stroke-width="1.2" stroke-linecap="round"/>
+        <text x="24" y="17" font-size="11" font-weight="600" fill="#3730A3">Backend</text>
+      </g>
+    </g>
+
+    <!-- STEP 09 -->
+    <g id="step-9" transform="translate(180, 230)">
+      <rect x="0" y="0" width="600" height="58" rx="10" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" filter="url(#card-shadow)"/>
+      <rect x="0" y="0" width="6" height="58" rx="3" fill="#24292F"/>
+      
+      <rect x="20" y="16" width="32" height="26" rx="6" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1"/>
+      <text x="36" y="33" font-size="12" font-weight="800" fill="#1E293B" text-anchor="middle">09</text>
+      
+      <text x="68" y="34" font-size="14" font-weight="700" fill="#0F172A">User installs app on selected org/repo(s)</text>
+      
+      <g transform="translate(470, 16)">
+        <rect x="0" y="0" width="110" height="26" rx="6" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1"/>
+        <circle cx="16" cy="13" r="5" fill="#24292F"/>
+        <text x="27" y="17" font-size="11" font-weight="600" fill="#1E293B">GitHub</text>
+      </g>
+    </g>
+
+    <!-- STEP 10 -->
+    <g id="step-10" transform="translate(180, 320)">
+      <rect x="0" y="0" width="600" height="58" rx="10" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" filter="url(#card-shadow)"/>
+      <rect x="0" y="0" width="6" height="58" rx="3" fill="#24292F"/>
+      
+      <rect x="20" y="16" width="32" height="26" rx="6" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1"/>
+      <text x="36" y="33" font-size="12" font-weight="800" fill="#1E293B" text-anchor="middle">10</text>
+      
+      <text x="68" y="34" font-size="14" font-weight="700" fill="#0F172A">GitHub sends callback/webhook to backend</text>
+      
+      <g transform="translate(470, 16)">
+        <rect x="0" y="0" width="110" height="26" rx="6" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1"/>
+        <circle cx="16" cy="13" r="5" fill="#24292F"/>
+        <text x="27" y="17" font-size="11" font-weight="600" fill="#1E293B">GitHub</text>
+      </g>
+    </g>
+
+    <!-- STEP 11 -->
+    <g id="step-11" transform="translate(180, 410)">
+      <rect x="0" y="0" width="600" height="58" rx="10" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" filter="url(#card-shadow)"/>
+      <rect x="0" y="0" width="6" height="58" rx="3" fill="#4F46E5"/>
+      
+      <rect x="20" y="16" width="32" height="26" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1"/>
+      <text x="36" y="33" font-size="12" font-weight="800" fill="#4338CA" text-anchor="middle">11</text>
+      
+      <text x="68" y="34" font-size="14" font-weight="700" fill="#0F172A">Backend stores GitHub installation details</text>
+      
+      <g transform="translate(470, 16)">
+        <rect x="0" y="0" width="110" height="26" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1"/>
+        <path d="M8 9 h8 v3 h-8 z M8 14 h8 v3 h-8 z" fill="none" stroke="#4F46E5" stroke-width="1.2" stroke-linecap="round"/>
+        <text x="24" y="17" font-size="11" font-weight="600" fill="#3730A3">Backend</text>
+      </g>
+    </g>
+
+    <!-- STEP 12 -->
+    <g id="step-12" transform="translate(180, 500)">
+      <rect x="0" y="0" width="600" height="58" rx="10" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" filter="url(#card-shadow)"/>
+      <rect x="0" y="0" width="6" height="58" rx="3" fill="#4F46E5"/>
+      
+      <rect x="20" y="16" width="32" height="26" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1"/>
+      <text x="36" y="33" font-size="12" font-weight="800" fill="#4338CA" text-anchor="middle">12</text>
+      
+      <text x="68" y="34" font-size="14" font-weight="700" fill="#0F172A">Backend fetches selected repositories</text>
+      
+      <g transform="translate(470, 16)">
+        <rect x="0" y="0" width="110" height="26" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1"/>
+        <path d="M8 9 h8 v3 h-8 z M8 14 h8 v3 h-8 z" fill="none" stroke="#4F46E5" stroke-width="1.2" stroke-linecap="round"/>
+        <text x="24" y="17" font-size="11" font-weight="600" fill="#3730A3">Backend</text>
+      </g>
+    </g>
+
+    <!-- STEP 13 -->
+    <g id="step-13" transform="translate(180, 590)">
+      <rect x="0" y="0" width="600" height="58" rx="10" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" filter="url(#card-shadow)"/>
+      <rect x="0" y="0" width="6" height="58" rx="3" fill="#4F46E5"/>
+      
+      <rect x="20" y="16" width="32" height="26" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1"/>
+      <text x="36" y="33" font-size="12" font-weight="800" fill="#4338CA" text-anchor="middle">13</text>
+      
+      <text x="68" y="34" font-size="14" font-weight="700" fill="#0F172A">Backend stores repo mapping</text>
+      
+      <g transform="translate(470, 16)">
+        <rect x="0" y="0" width="110" height="26" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1"/>
+        <path d="M8 9 h8 v3 h-8 z M8 14 h8 v3 h-8 z" fill="none" stroke="#4F46E5" stroke-width="1.2" stroke-linecap="round"/>
+        <text x="24" y="17" font-size="11" font-weight="600" fill="#3730A3">Backend</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Transition Arrow Phase 2 -> Phase 3 -->
+  <line x1="540" y1="1515" x2="540" y2="1550" stroke="#7C3AED" stroke-width="2.5" marker-end="url(#arrow-purple)"/>
+
+  <!-- ==================== PHASE 3: EVENT INGESTION & AI CODE REVIEW PIPELINE ==================== -->
+  <g id="phase-3" transform="translate(60, 1555)">
+    <!-- Phase 3 Boundary Container -->
+    <rect x="0" y="0" width="960" height="480" rx="14" fill="#FAF5FF" stroke="#F3E8FF" stroke-width="1.2" stroke-dasharray="6,4" filter="url(#phase-shadow)"/>
+    
+    <!-- Phase Badge -->
+    <g transform="translate(24, 18)">
+      <rect x="0" y="0" width="415" height="28" rx="6" fill="#FAF5FF" stroke="#E9D5FF" stroke-width="1"/>
+      <circle cx="16" cy="14" r="4" fill="#7C3AED"/>
+      <text x="28" y="18" font-size="12" font-weight="700" fill="#6B21A8" letter-spacing="0.5">PHASE 3: WEBHOOK EVENT &amp; AI REVIEW PIPELINE</text>
+    </g>
+
+    <!-- Connecting Arrows for Phase 3 -->
+    <!-- 14 -> 15 -->
+    <line x1="480" y1="108" x2="480" y2="136" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- 15 -> 16 -->
+    <line x1="480" y1="198" x2="480" y2="226" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- 16 -> 17 -->
+    <line x1="480" y1="288" x2="480" y2="316" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- 17 -> 18 -->
+    <line x1="480" y1="378" x2="480" y2="406" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- STEP 14 -->
+    <g id="step-14" transform="translate(180, 50)">
+      <rect x="0" y="0" width="600" height="58" rx="10" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" filter="url(#card-shadow)"/>
+      <rect x="0" y="0" width="6" height="58" rx="3" fill="#24292F"/>
+      
+      <rect x="20" y="16" width="32" height="26" rx="6" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1"/>
+      <text x="36" y="33" font-size="12" font-weight="800" fill="#1E293B" text-anchor="middle">14</text>
+      
+      <text x="68" y="34" font-size="14" font-weight="700" fill="#0F172A">Backend receives PR/push webhooks</text>
+      
+      <g transform="translate(470, 16)">
+        <rect x="0" y="0" width="110" height="26" rx="6" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1"/>
+        <circle cx="16" cy="13" r="5" fill="#24292F"/>
+        <text x="27" y="17" font-size="11" font-weight="600" fill="#1E293B">GitHub</text>
+      </g>
+    </g>
+
+    <!-- STEP 15 -->
+    <g id="step-15" transform="translate(180, 140)">
+      <rect x="0" y="0" width="600" height="58" rx="10" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" filter="url(#card-shadow)"/>
+      <rect x="0" y="0" width="6" height="58" rx="3" fill="#4F46E5"/>
+      
+      <rect x="20" y="16" width="32" height="26" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1"/>
+      <text x="36" y="33" font-size="12" font-weight="800" fill="#4338CA" text-anchor="middle">15</text>
+      
+      <text x="68" y="34" font-size="14" font-weight="700" fill="#0F172A">Backend creates review job</text>
+      
+      <g transform="translate(470, 16)">
+        <rect x="0" y="0" width="110" height="26" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1"/>
+        <path d="M8 9 h8 v3 h-8 z M8 14 h8 v3 h-8 z" fill="none" stroke="#4F46E5" stroke-width="1.2" stroke-linecap="round"/>
+        <text x="24" y="17" font-size="11" font-weight="600" fill="#3730A3">Backend</text>
+      </g>
+    </g>
+
+    <!-- STEP 16 -->
+    <g id="step-16" transform="translate(180, 230)">
+      <rect x="0" y="0" width="600" height="58" rx="10" fill="#FFFFFF" stroke="#A855F7" stroke-width="2" filter="url(#card-shadow)"/>
+      <rect x="0" y="0" width="6" height="58" rx="3" fill="#7C3AED"/>
+      
+      <rect x="20" y="16" width="32" height="26" rx="6" fill="#FAF5FF" stroke="#E9D5FF" stroke-width="1"/>
+      <text x="36" y="33" font-size="12" font-weight="800" fill="#7C3AED" text-anchor="middle">16</text>
+      
+      <text x="68" y="34" font-size="14" font-weight="700" fill="#581C87">AI review worker processes diff</text>
+      
+      <g transform="translate(435, 16)">
+        <rect x="0" y="0" width="145" height="26" rx="6" fill="#FAF5FF" stroke="#E9D5FF" stroke-width="1"/>
+        <path d="M11 7 l.7 2 l2 .7 l-2 .7 l-.7 2 l-.7 -2 l-2 -.7 l2 -.7 z M7 14 l.5 1 l1 .5 l-1 .5 l-.5 1 l-.5 -1 l-1 -.5 l1 -.5 z" fill="#7C3AED"/>
+        <text x="24" y="17" font-size="11" font-weight="600" fill="#6B21A8">AI Review Worker</text>
+      </g>
+    </g>
+
+    <!-- STEP 17 -->
+    <g id="step-17" transform="translate(180, 320)">
+      <rect x="0" y="0" width="600" height="58" rx="10" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" filter="url(#card-shadow)"/>
+      <rect x="0" y="0" width="6" height="58" rx="3" fill="#4F46E5"/>
+      
+      <rect x="20" y="16" width="32" height="26" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1"/>
+      <text x="36" y="33" font-size="12" font-weight="800" fill="#4338CA" text-anchor="middle">17</text>
+      
+      <text x="68" y="34" font-size="14" font-weight="700" fill="#0F172A">Backend stores review findings</text>
+      
+      <g transform="translate(470, 16)">
+        <rect x="0" y="0" width="110" height="26" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1"/>
+        <path d="M8 9 h8 v3 h-8 z M8 14 h8 v3 h-8 z" fill="none" stroke="#4F46E5" stroke-width="1.2" stroke-linecap="round"/>
+        <text x="24" y="17" font-size="11" font-weight="600" fill="#3730A3">Backend</text>
+      </g>
+    </g>
+
+    <!-- STEP 18 -->
+    <g id="step-18" transform="translate(180, 410)">
+      <rect x="0" y="0" width="600" height="58" rx="10" fill="#FFFFFF" stroke="#14B8A6" stroke-width="2" filter="url(#card-shadow)"/>
+      <rect x="0" y="0" width="6" height="58" rx="3" fill="#0D9488"/>
+      
+      <rect x="20" y="16" width="32" height="26" rx="6" fill="#F0FDFA" stroke="#99F6E4" stroke-width="1"/>
+      <text x="36" y="33" font-size="12" font-weight="800" fill="#0F766E" text-anchor="middle">18</text>
+      
+      <text x="68" y="34" font-size="14" font-weight="700" fill="#0F172A">Backend returns results to frontend dashboard</text>
+      
+      <g transform="translate(425, 16)">
+        <rect x="0" y="0" width="155" height="26" rx="6" fill="#F0FDFA" stroke="#99F6E4" stroke-width="1"/>
+        <path d="M7 8 h4 v4 h-4 z M13 8 h4 v2 h-4 z M13 12 h4 v4 h-4 z M7 14 h4 v2 h-4 z" fill="none" stroke="#0D9488" stroke-width="1.2" stroke-linecap="round"/>
+        <text x="24" y="17" font-size="11" font-weight="600" fill="#115E59">Frontend Dashboard</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ==================== FOOTER ==================== -->
+  <g id="footer" transform="translate(60, 2060)">
+    <rect x="0" y="0" width="960" height="75" rx="12" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.2"/>
+    <text x="30" y="32" font-size="13" font-weight="700" fill="#1E293B">AI Code Review &amp; Governance Platform Architecture Documentation</text>
+    <text x="30" y="52" font-size="11" font-weight="500" fill="#64748B">Designed for Academic Project Reports (MCA), Technical Presentations &amp; System Design Reference</text>
+    
+    <g transform="translate(750, 20)">
+      <rect x="0" y="0" width="180" height="34" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+      <text x="90" y="21" font-size="11" font-weight="700" fill="#334155" text-anchor="middle">All 18 Modules Verified ✓</text>
+    </g>
+  </g>
+</svg>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="export-canvas" style="display:none;"></canvas>
+
+  <script>
+    // Fetch fallback if separate or inline
+    fetch('project-module-workflow.svg')
+      .then(response => {
+        if (!response.ok) throw new Error('Network response not ok');
+        return response.text();
+      })
+      .then(svgText => {
+        const host = document.getElementById('svg-host');
+        if (!host.querySelector('svg')) {
+          host.innerHTML = svgText;
+        }
+      })
+      .catch(err => {
+        console.warn('Fetch fallback triggered or CORS restricted on file://, ensuring inline fallback is intact.', err);
+      });
+
+    function downloadSvg() {
+      const svgEl = document.querySelector('#svg-host svg');
+      if (!svgEl) return;
+      const serializer = new XMLSerializer();
+      const svgBlob = new Blob([serializer.serializeToString(svgEl)], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'project-module-workflow.svg';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    function exportHighResPng() {
+      const svgEl = document.querySelector('#svg-host svg');
+      if (!svgEl) return;
+
+      const serializer = new XMLSerializer();
+      const svgString = serializer.serializeToString(svgEl);
+      const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const URLObj = window.URL || window.webkitURL || window;
+      const blobURL = URLObj.createObjectURL(svgBlob);
+
+      const image = new Image();
+      image.onload = function() {
+        const scale = 2.5; // 2.5x upscale for 300 DPI print quality
+        const canvas = document.getElementById('export-canvas');
+        canvas.width = 1080 * scale;
+        canvas.height = 2200 * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+        const pngUrl = canvas.toDataURL('image/png');
+        const downloadLink = document.createElement('a');
+        downloadLink.href = pngUrl;
+        downloadLink.download = 'project-module-workflow-highres.png';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        URLObj.revokeObjectURL(blobURL);
+      };
+      image.src = blobURL;
+    }
+  </script>
+</body>
+</html>
