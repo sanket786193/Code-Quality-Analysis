@@ -17,6 +17,10 @@ public interface ReviewJobRepository extends JpaRepository<ReviewJob, Long> {
 
     Page<ReviewJob> findByProjectIdOrderByQueuedAtDesc(Long projectId, Pageable pageable);
 
+    List<ReviewJob> findByProjectIdAndPullRequestNumberOrderByQueuedAtDesc(Long projectId, Integer pullRequestNumber);
+
+    Page<ReviewJob> findBySenderUsernameOrderByQueuedAtDesc(String senderUsername, Pageable pageable);
+
     List<ReviewJob> findTop5ByProjectIdOrderByQueuedAtDesc(Long projectId);
 
     long countByProjectId(Long projectId);

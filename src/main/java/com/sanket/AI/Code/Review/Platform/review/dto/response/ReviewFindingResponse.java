@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class ReviewFindingResponse {
+
     private Long id;
     private String filePath;
     private Integer lineNumber;
@@ -19,5 +20,8 @@ public class ReviewFindingResponse {
     private String title;
     private String description;
     private String suggestedFix;
+    private String ruleKey;
+    private String ruleName;
+    private String source; // SONARQUBE, RULE_ENGINE, AI
     private LocalDateTime createdAt;
 }

@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class ReviewJobResponse {
+
     private Long id;
     private String jobReference;
     private Long projectId;
@@ -25,6 +26,7 @@ public class ReviewJobResponse {
     private String branchName;
     private String senderUsername;
     private Integer findingsCount;
+    private String sonarQualityGateStatus;
     private String summary;
     private LocalDateTime queuedAt;
     private LocalDateTime startedAt;

@@ -2,7 +2,7 @@ package com.sanket.AI.Code.Review.Platform.github.client;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sanket.AI.Code.Review.Platform.exception.GitHubInstallationException;
+import com.sanket.AI.Code.Review.Platform.exception.GitHubApiException;
 import com.sanket.AI.Code.Review.Platform.github.dto.GitHubRepositoryDto;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Client for interacting with the GitHub REST API.
+ * Client for interacting with the GitHub REST API (v3 / 2022-11-28).
  */
 @Component
 @Slf4j
@@ -34,11 +34,16 @@ public class GitHubApiClient {
     }
 
     /**
-     * Fetches repositories associated with an installation using the installation access token or mock fallback.
+     * Fetches repositories associated with an installation using the installation access token.
+     * Falls back to mock repository catalog in local sandbox / development environments when no token is present.
      */
     public List<GitHubRepositoryDto> getInstallationRepositories(Long installationId, String installationToken) {
+        if (installationId == null) {
+            throw new GitHubApiException("Cannot fetch repositories: installationId is null");
+        }
+
         try {
-            log.info("Fetching repositories for GitHub installation ID: {}", installationId);
+            log.info("Fetching repositories from GitHub API for installation ID: {}", installationId);
 
             RestClient.RequestHeadersSpec<?> request = restClient.get()
                     .uri("/installation/repositories");
@@ -57,10 +62,30 @@ public class GitHubApiClient {
             }
             return new ArrayList<>();
         } catch (Exception ex) {
-            log.warn("Could not query live GitHub API for installation {} (expected in test/local environments): {}. Returning fallback mock repos.",
+            log.warn("Direct GitHub API request for installation {} failed or unauthenticated: {}. Providing development mock repositories.",
                     installationId, ex.getMessage());
-            // Provide a sensible fallback list for testing/local development environments
             return createLocalFallbackRepositories(installationId);
+        }
+    }
+
+    /**
+     * Fetches a specific repository by owner and name.
+     */
+    public GitHubRepositoryDto getRepositoryDetails(String owner, String repo, String installationToken) {
+        try {
+            RestClient.RequestHeadersSpec<?> request = restClient.get()
+                    .uri("/repos/{owner}/{repo}", owner, repo);
+
+            if (installationToken != null && !installationToken.isBlank()) {
+                request.header(HttpHeaders.AUTHORIZATION, "Bearer " + installationToken);
+            }
+
+            return request.accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .body(GitHubRepositoryDto.class);
+        } catch (Exception ex) {
+            log.error("Failed to fetch repository details for {}/{}: {}", owner, repo, ex.getMessage());
+            throw new GitHubApiException("Failed to retrieve repository from GitHub: " + owner + "/" + repo, ex);
         }
     }
 
@@ -83,6 +108,15 @@ public class GitHubApiClient {
                 .defaultBranch("main")
                 .isPrivate(false)
                 .description("Core API Gateway and Authentication Services")
+                .build());
+        list.add(GitHubRepositoryDto.builder()
+                .id(100003L)
+                .name("frontend-web-portal")
+                .fullName("dev-team/frontend-web-portal")
+                .htmlUrl("https://github.com/dev-team/frontend-web-portal")
+                .defaultBranch("main")
+                .isPrivate(true)
+                .description("Next.js Enterprise Review Dashboard")
                 .build());
         return list;
     }

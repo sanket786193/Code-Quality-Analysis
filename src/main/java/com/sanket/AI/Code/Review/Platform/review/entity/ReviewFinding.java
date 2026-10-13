@@ -8,7 +8,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "review_findings", indexes = {
         @Index(name = "idx_finding_job_id", columnList = "review_job_id"),
-        @Index(name = "idx_finding_severity", columnList = "severity")
+        @Index(name = "idx_finding_severity", columnList = "severity"),
+        @Index(name = "idx_finding_source", columnList = "source")
 })
 @Getter
 @Setter
@@ -35,7 +36,7 @@ public class ReviewFinding {
     private FindingSeverity severity;
 
     @Column(nullable = false)
-    private String category; // SECURITY, CODE_SMELL, PERFORMANCE, BUG, GOVERNANCE
+    private String category; // SECURITY, CODE_SMELL, PERFORMANCE, BUG, GOVERNANCE, etc.
 
     @Column(nullable = false)
     private String title;
@@ -46,10 +47,21 @@ public class ReviewFinding {
     @Column(columnDefinition = "TEXT")
     private String suggestedFix;
 
+    private String ruleKey;
+
+    private String ruleName;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private String source = "RULE_ENGINE"; // SONARQUBE, RULE_ENGINE, AI
+
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
+        if (this.source == null) {
+            this.source = "RULE_ENGINE";
+        }
     }
 }
