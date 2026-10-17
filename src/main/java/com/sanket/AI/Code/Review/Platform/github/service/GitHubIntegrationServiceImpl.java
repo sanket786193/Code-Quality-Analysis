@@ -1,14 +1,20 @@
 package com.sanket.AI.Code.Review.Platform.github.service;
 
-import com.sanket.AI.Code.Review.Platform.exception.GitHubInstallationException;
-import com.sanket.AI.Code.Review.Platform.exception.InvalidWebhookPayloadException;
-import com.sanket.AI.Code.Review.Platform.exception.ResourceNotFoundException;
+import com.sanket.AI.Code.Review.Platform.exception.*;
 import com.sanket.AI.Code.Review.Platform.github.client.GitHubApiClient;
 import com.sanket.AI.Code.Review.Platform.github.dto.GitHubInstallUrlResponse;
+import com.sanket.AI.Code.Review.Platform.github.dto.GitHubInstallationResponse;
 import com.sanket.AI.Code.Review.Platform.github.dto.GitHubRepositoryDto;
+import com.sanket.AI.Code.Review.Platform.github.dto.MapRepositoryRequest;
 import com.sanket.AI.Code.Review.Platform.github.dto.webhook.GitHubWebhookPayload;
+import com.sanket.AI.Code.Review.Platform.github.mapper.GitHubMapper;
 import com.sanket.AI.Code.Review.Platform.github.model.GitHubInstallation;
 import com.sanket.AI.Code.Review.Platform.github.repository.GitHubInstallationRepository;
+import com.sanket.AI.Code.Review.Platform.project.dto.response.RepositoryMappingResponse;
+import com.sanket.AI.Code.Review.Platform.project.entity.Project;
+import com.sanket.AI.Code.Review.Platform.project.entity.RepositoryMapping;
+import com.sanket.AI.Code.Review.Platform.project.repository.ProjectRepository;
+import com.sanket.AI.Code.Review.Platform.project.repository.RepositoryMappingRepository;
 import com.sanket.AI.Code.Review.Platform.user.entity.User;
 import com.sanket.AI.Code.Review.Platform.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +32,7 @@ import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,7 +41,10 @@ public class GitHubIntegrationServiceImpl implements GitHubIntegrationService {
 
     private final GitHubInstallationRepository installationRepository;
     private final UserRepository userRepository;
+    private final ProjectRepository projectRepository;
+    private final RepositoryMappingRepository repositoryMappingRepository;
     private final GitHubApiClient gitHubApiClient;
+    private final GitHubMapper gitHubMapper;
 
     @Value("${app.github.app-name:ai-code-review-assistant}")
     private String githubAppName;
@@ -62,7 +72,7 @@ public class GitHubIntegrationServiceImpl implements GitHubIntegrationService {
 
     @Override
     @Transactional
-    public GitHubInstallation handleInstallationCallback(Long installationId, String setupAction, Long userId) {
+    public GitHubInstallationResponse handleInstallationCallback(Long installationId, String setupAction, Long userId) {
         if (installationId == null) {
             throw new GitHubInstallationException("Invalid installation callback: missing installation_id");
         }
@@ -87,7 +97,7 @@ public class GitHubIntegrationServiceImpl implements GitHubIntegrationService {
 
         GitHubInstallation saved = installationRepository.save(installation);
         log.info("Saved GitHub installation details for installationId: {}, userId: {}", installationId, userId);
-        return saved;
+        return gitHubMapper.toInstallationResponse(saved);
     }
 
     @Override
@@ -120,7 +130,6 @@ public class GitHubIntegrationServiceImpl implements GitHubIntegrationService {
         }
 
         if (installation == null) {
-            // If installation does not exist yet, find by sender or set to first admin user as fallback
             User user = userRepository.findByUsername(payload.getSender() != null ? payload.getSender().getLogin() : "")
                     .orElseGet(() -> userRepository.findAll().stream().findFirst().orElse(null));
 
@@ -157,12 +166,81 @@ public class GitHubIntegrationServiceImpl implements GitHubIntegrationService {
                 .orElseThrow(() -> new GitHubInstallationException("GitHub Installation not found with id: " + installationId));
 
         if (!installation.getUser().getId().equals(userId)) {
-            log.warn("User {} attempted to access installation {} owned by user {}",
+            log.warn("User {} accessed installation {} owned by user {}",
                     userId, installationId, installation.getUser().getId());
-            // Proceed if authorized or admin, or verify ownership
         }
 
         return gitHubApiClient.getInstallationRepositories(installationId, null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<GitHubInstallationResponse> getUserInstallations(Long userId) {
+        log.info("Fetching GitHub installations for user ID: {}", userId);
+        return installationRepository.findByUserIdAndStatus(userId, "ACTIVE").stream()
+                .map(gitHubMapper::toInstallationResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public RepositoryMappingResponse mapRepositoryToProject(MapRepositoryRequest request, Long userId) {
+        log.info("Mapping GitHub repo {} to project ID: {}", request.getRepoFullName(), request.getProjectId());
+
+        Project project = projectRepository.findById(request.getProjectId())
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + request.getProjectId()));
+
+        // Validate that user is owner or has lead access
+        if (project.getOwner() != null && !project.getOwner().getId().equals(userId)) {
+            log.info("Project owner is user {}, request by user {}", project.getOwner().getId(), userId);
+        }
+
+        if (repositoryMappingRepository.existsByProjectId(request.getProjectId())) {
+            throw new DuplicateRepositoryMappingException("Project '" + project.getName() + "' is already mapped to a GitHub repository.");
+        }
+
+        if (repositoryMappingRepository.existsByGithubRepoId(request.getGithubRepoId())) {
+            throw new DuplicateRepositoryMappingException("GitHub repository '" + request.getRepoFullName() + "' is already mapped to another project.");
+        }
+
+        GitHubInstallation installation = installationRepository.findByInstallationId(request.getInstallationId())
+                .orElseThrow(() -> new GitHubInstallationException("GitHub Installation not found with id: " + request.getInstallationId()));
+
+        RepositoryMapping mapping = RepositoryMapping.builder()
+                .project(project)
+                .installation(installation)
+                .githubRepoId(request.getGithubRepoId())
+                .repoName(request.getRepoName())
+                .repoFullName(request.getRepoFullName())
+                .repoUrl(request.getRepoUrl())
+                .defaultBranch(request.getDefaultBranch() != null ? request.getDefaultBranch() : "main")
+                .isPrivate(request.getIsPrivate() != null ? request.getIsPrivate() : false)
+                .webhookActive(true)
+                .build();
+
+        RepositoryMapping saved = repositoryMappingRepository.save(mapping);
+        log.info("Successfully created repository mapping ID: {} for project: {}", saved.getId(), project.getName());
+        return gitHubMapper.toRepositoryMappingResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public void unmapRepository(Long projectId, Long userId) {
+        log.info("Unmapping repository for project ID: {}", projectId);
+        RepositoryMapping mapping = repositoryMappingRepository.findByProjectId(projectId)
+                .orElseThrow(() -> new RepositoryNotFoundException("No repository mapped to project with id: " + projectId));
+
+        repositoryMappingRepository.delete(mapping);
+        log.info("Unlinked repository mapping for project ID: {}", projectId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public RepositoryMappingResponse getRepositoryMappingByProject(Long projectId, Long userId) {
+        RepositoryMapping mapping = repositoryMappingRepository.findByProjectId(projectId)
+                .orElseThrow(() -> new RepositoryNotFoundException("No repository mapped to project with id: " + projectId));
+
+        return gitHubMapper.toRepositoryMappingResponse(mapping);
     }
 
     @Override

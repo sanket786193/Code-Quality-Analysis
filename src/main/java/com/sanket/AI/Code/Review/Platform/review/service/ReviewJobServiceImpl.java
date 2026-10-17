@@ -6,6 +6,8 @@ import com.sanket.AI.Code.Review.Platform.exception.UnauthorizedProjectAccessExc
 import com.sanket.AI.Code.Review.Platform.project.entity.Project;
 import com.sanket.AI.Code.Review.Platform.project.entity.RepositoryMapping;
 import com.sanket.AI.Code.Review.Platform.project.repository.ProjectRepository;
+import com.sanket.AI.Code.Review.Platform.review.dto.request.CreateManualReviewRequest;
+import com.sanket.AI.Code.Review.Platform.review.dto.response.ReviewInsightsResponse;
 import com.sanket.AI.Code.Review.Platform.review.dto.response.ReviewJobDetailResponse;
 import com.sanket.AI.Code.Review.Platform.review.dto.response.ReviewJobResponse;
 import com.sanket.AI.Code.Review.Platform.review.entity.*;
@@ -26,6 +28,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -76,6 +79,41 @@ public class ReviewJobServiceImpl implements ReviewJobService {
     }
 
     @Override
+    @Transactional
+    public ReviewJobResponse createManualReviewJob(Long projectId, CreateManualReviewRequest request, UserPrincipal currentUser) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new InvalidProjectException("Project not found with id: " + projectId));
+
+        validateProjectAccess(project, currentUser);
+
+        RepositoryMapping mapping = project.getRepositoryMapping();
+        String jobRef = "REV-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
+        ReviewJob job = ReviewJob.builder()
+                .jobReference(jobRef)
+                .project(project)
+                .repositoryMapping(mapping)
+                .eventType(ReviewEventType.MANUAL)
+                .status(ReviewJobStatus.QUEUED)
+                .commitSha(request.getCommitSha() != null ? request.getCommitSha() : "manual-head")
+                .pullRequestNumber(request.getPullRequestNumber())
+                .pullRequestTitle(request.getPullRequestTitle() != null ? request.getPullRequestTitle() : "Manual Review Scan")
+                .branchName(request.getBranchName())
+                .senderUsername(currentUser.getUsername())
+                .queuedAt(LocalDateTime.now())
+                .findingsCount(0)
+                .build();
+
+        ReviewJob savedJob = reviewJobRepository.save(job);
+        dispatchJobToQueue(savedJob.getId());
+        return reviewMapper.toReviewJobResponse(savedJob);
+    }
+
+    @Override
+    public void executeReviewPipeline(Long reviewJobId) {
+        dispatchJobToQueue(reviewJobId);
+    }
+
     @Async("reviewJobExecutor")
     @Transactional
     public void dispatchJobToQueue(Long reviewJobId) {
@@ -102,8 +140,9 @@ public class ReviewJobServiceImpl implements ReviewJobService {
             }
 
             job.setFindingsCount(findings.size());
+            String repoName = job.getRepositoryMapping() != null ? job.getRepositoryMapping().getRepoFullName() : job.getProject().getName();
             job.setSummary(String.format("AI Review completed for %s (%s). Identified %d findings across security, performance, and governance categories.",
-                    job.getRepositoryMapping().getRepoFullName(), job.getBranchName(), findings.size()));
+                    repoName, job.getBranchName(), findings.size()));
             job.setStatus(ReviewJobStatus.COMPLETED);
             job.setCompletedAt(LocalDateTime.now());
             reviewJobRepository.save(job);
@@ -132,6 +171,27 @@ public class ReviewJobServiceImpl implements ReviewJobService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<ReviewJobResponse> getPullRequestReviews(Long projectId, Integer prNumber, UserPrincipal currentUser) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new InvalidProjectException("Project not found with id: " + projectId));
+
+        validateProjectAccess(project, currentUser);
+
+        return reviewJobRepository.findByProjectIdAndPullRequestNumberOrderByQueuedAtDesc(projectId, prNumber)
+                .stream()
+                .map(reviewMapper::toReviewJobResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ReviewJobResponse> getDeveloperReviews(UserPrincipal currentUser, Pageable pageable) {
+        return reviewJobRepository.findBySenderUsernameOrderByQueuedAtDesc(currentUser.getUsername(), pageable)
+                .map(reviewMapper::toReviewJobResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public ReviewJobDetailResponse getReviewJobDetails(String jobReference, UserPrincipal currentUser) {
         ReviewJob job = reviewJobRepository.findByJobReference(jobReference)
                 .orElseThrow(() -> new ResourceNotFoundException("Review job not found for reference: " + jobReference));
@@ -139,7 +199,35 @@ public class ReviewJobServiceImpl implements ReviewJobService {
         validateProjectAccess(job.getProject(), currentUser);
 
         List<ReviewFinding> findings = reviewFindingRepository.findByReviewJobIdOrderBySeverityAsc(job.getId());
-        return reviewMapper.toReviewJobDetailResponse(job, findings);
+        return reviewMapper.toReviewJobDetailResponse(job, findings, job.getReviewSummary());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ReviewInsightsResponse getProjectReviewInsights(Long projectId, UserPrincipal currentUser) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new InvalidProjectException("Project not found with id: " + projectId));
+
+        validateProjectAccess(project, currentUser);
+
+        long total = reviewJobRepository.countByProjectId(projectId);
+        long completed = reviewJobRepository.countByProjectIdAndStatus(projectId, ReviewJobStatus.COMPLETED);
+        long failed = reviewJobRepository.countByProjectIdAndStatus(projectId, ReviewJobStatus.FAILED);
+
+        List<ReviewJob> recent = reviewJobRepository.findTop5ByProjectIdOrderByQueuedAtDesc(projectId);
+        List<ReviewJobResponse> recentResponses = recent.stream()
+                .map(reviewMapper::toReviewJobResponse)
+                .collect(Collectors.toList());
+
+        return ReviewInsightsResponse.builder()
+                .projectId(projectId)
+                .projectName(project.getName())
+                .totalReviews(total)
+                .completedReviews(completed)
+                .failedReviews(failed)
+                .qualityGatePassRate(total > 0 ? (double) completed / total * 100.0 : 100.0)
+                .recentReviews(recentResponses)
+                .build();
     }
 
     private List<ReviewFinding> generateAutomatedAIFindings(ReviewJob job) {
@@ -185,7 +273,7 @@ public class ReviewJobServiceImpl implements ReviewJobService {
         if (hasRole(currentUser, "ROLE_ADMIN")) {
             return;
         }
-        if (project.getOwner().getId().equals(currentUser.getId())) {
+        if (project.getOwner() != null && project.getOwner().getId().equals(currentUser.getId())) {
             return;
         }
         if (project.getTeamLead() != null && project.getTeamLead().getId().equals(currentUser.getId())) {

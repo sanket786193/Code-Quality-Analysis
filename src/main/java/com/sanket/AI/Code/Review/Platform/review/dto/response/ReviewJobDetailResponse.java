@@ -10,6 +10,9 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class ReviewJobDetailResponse {
+
     private ReviewJobResponse job;
+    private ReviewSummaryResponse summary;
     private List<ReviewFindingResponse> findings;
+    private String aiReviewContext;
 }

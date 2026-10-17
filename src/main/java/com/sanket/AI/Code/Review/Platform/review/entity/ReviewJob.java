@@ -14,7 +14,8 @@ import java.util.UUID;
 @Table(name = "review_jobs", indexes = {
         @Index(name = "idx_review_job_reference", columnList = "jobReference"),
         @Index(name = "idx_review_job_project_id", columnList = "project_id"),
-        @Index(name = "idx_review_job_status", columnList = "status")
+        @Index(name = "idx_review_job_status", columnList = "status"),
+        @Index(name = "idx_review_job_pr_num", columnList = "pullRequestNumber")
 })
 @Getter
 @Setter
@@ -45,7 +46,7 @@ public class ReviewJob {
     @Enumerated(EnumType.STRING)
     @Builder.Default
     @Column(nullable = false)
-    private ReviewJobStatus status = ReviewJobStatus.QUEUED;
+    private ReviewJobStatus status = ReviewJobStatus.PENDING;
 
     @Column(nullable = false)
     private String commitSha;
@@ -64,8 +65,15 @@ public class ReviewJob {
     @Column(nullable = false)
     private Integer findingsCount = 0;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private String sonarQualityGateStatus = "PASSED";
+
     @Column(columnDefinition = "TEXT")
     private String summary;
+
+    @Column(columnDefinition = "TEXT")
+    private String aiReviewContext;
 
     private LocalDateTime queuedAt;
 
@@ -77,6 +85,9 @@ public class ReviewJob {
     @Builder.Default
     private List<ReviewFinding> findings = new ArrayList<>();
 
+    @OneToOne(mappedBy = "reviewJob", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private ReviewSummary reviewSummary;
+
     @PrePersist
     protected void onCreate() {
         if (this.jobReference == null || this.jobReference.isBlank()) {
@@ -86,10 +97,13 @@ public class ReviewJob {
             this.queuedAt = LocalDateTime.now();
         }
         if (this.status == null) {
-            this.status = ReviewJobStatus.QUEUED;
+            this.status = ReviewJobStatus.PENDING;
         }
         if (this.findingsCount == null) {
             this.findingsCount = 0;
+        }
+        if (this.sonarQualityGateStatus == null) {
+            this.sonarQualityGateStatus = "PASSED";
         }
     }
 }
